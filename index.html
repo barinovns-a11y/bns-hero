@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BNS Connect — Fiber Optic & Low-Voltage</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+  :root {
+    --bg-deep: #060B14;
+    --bg-mid: #0A1322;
+    --signal: #FF6B2C;
+    --signal-glow: #FF8A4C;
+    --cyan: #2DD4D4;
+    --ink: #EAF2FB;
+    --ink-dim: #7E8CA0;
+    --line: rgba(255,255,255,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg-deep);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  }
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 20%, rgba(255,107,44,0.10), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 20% 80%, rgba(45,212,212,0.08), transparent 55%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+  }
+  #fiber-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    transition: transform 0.25s ease-out;
+  }
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent 80%);
+    opacity: 0.5;
+    transition: transform 0.4s ease-out;
+  }
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 48px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    animation: fadeDown 0.8s ease both;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+  .logo-mark svg { width: 100%; height: 100%; }
+  .logo span { color: var(--signal); }
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    align-items: center;
+  }
+  .nav-links a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.25s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta {
+    padding: 11px 22px;
+    background: var(--signal);
+    color: #0A0A0A !important;
+    border-radius: 100px;
+    font-weight: 600 !important;
+    transition: transform 0.25s, box-shadow 0.25s;
+    box-shadow: 0 0 0 rgba(255,107,44,0);
+  }
+  .nav-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255,107,44,0.4);
+    color: #0A0A0A !important;
+  }
+  .hero-body {
+    position: relative;
+    z-index: 5;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 48px;
+    width: 100%;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 28px;
+    width: fit-content;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .eyebrow .dot {
+    width: 7px; height: 7px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--cyan);
+    animation: pulse 2s infinite;
+  }
+  .eyebrow .lic {
+    color: var(--ink-dim);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  h1 {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 8vw, 104px);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    max-width: 14ch;
+    margin-bottom: 32px;
+  }
+  h1 .line { display: block; overflow: hidden; }
+  h1 .line span {
+    display: block;
+    animation: lineUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  h1 .line:nth-child(1) span { animation-delay: 0.2s; }
+  h1 .line:nth-child(2) span { animation-delay: 0.33s; }
+  h1 .line:nth-child(3) span { animation-delay: 0.46s; }
+  h1 .glow {
+    background: linear-gradient(120deg, var(--signal) 0%, var(--signal-glow) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+  }
+  .sub {
+    font-size: clamp(16px, 2vw, 20px);
+    line-height: 1.6;
+    color: var(--ink-dim);
+    max-width: 52ch;
+    margin-bottom: 44px;
+    animation: fadeUp 0.8s 0.6s ease both;
+  }
+  .sub strong { color: var(--ink); font-weight: 600; }
+  .cta-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.7s ease both;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 30px;
+    background: var(--signal);
+    color: #0A0A0A;
+    border: none;
+    border-radius: 100px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s;
+    text-decoration: none;
+  }
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(255,107,44,0.45);
+  }
+  .btn-primary svg { transition: transform 0.25s; }
+  .btn-primary:hover svg { transform: translateX(4px); }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 30px;
+    background: rgba(255,255,255,0.04);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.25s, border-color 0.25s;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .stats {
+    position: relative;
+    z-index: 5;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 48px 48px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s 0.9s ease both;
+  }
+  .stats-wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 48px;
+  }
+  .stat {
+    background: rgba(10,19,34,0.7);
+    backdrop-filter: blur(10px);
+    padding: 28px 32px;
+  }
+  .stat-num {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+  .stat-num .plus { color: var(--signal); font-size: 28px; }
+  .stat-label {
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .badges {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    max-width: 1400px;
+    margin: 0 auto 56px;
+    padding: 0 48px;
+    width: 100%;
+    animation: fadeUp 0.8s 1s ease both;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-dim);
+    animation: badgeGlow 3.2s ease-in-out infinite;
+  }
+  .badge:nth-child(2) { animation-delay: 0.5s; }
+  .badge:nth-child(3) { animation-delay: 1s; }
+  .badge:nth-child(4) { animation-delay: 1.5s; }
+  .badge:nth-child(5) { animation-delay: 2s; }
+  .badge .bdot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+  @keyframes badgeGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(45,212,212,0); border-color: var(--line); }
+    50% { box-shadow: 0 0 16px rgba(45,212,212,0.22); border-color: rgba(45,212,212,0.35); }
+  }
+  @keyframes lineUp { from { transform: translateY(110%); } to { transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.4); } }
+  .scroll-hint {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: fadeUp 1s 1.2s ease both;
+  }
+  .scroll-hint .mouse {
+    width: 24px; height: 38px;
+    border: 1.5px solid var(--ink-dim);
+    border-radius: 12px;
+    position: relative;
+  }
+  .scroll-hint .mouse::after {
+    content: '';
+    position: absolute;
+    top: 7px; left: 50%;
+    transform: translateX(-50%);
+    width: 3px; height: 7px;
+    background: var(--signal);
+    border-radius: 2px;
+    animation: scrollDot 1.8s infinite;
+  }
+  @keyframes scrollDot { 0% { opacity: 0; transform: translate(-50%, 0); } 40% { opacity: 1; } 80% { opacity: 0; transform: translate(-50%, 14px); } }
+  @media (max-width: 880px) {
+    nav { padding: 20px 24px; }
+    .nav-links { display: none; }
+    .hero-body { padding: 0 24px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stats-wrap, .badges { padding: 0 24px; }
+    .badges { margin-bottom: 40px; }
+    .stat { padding: 22px 20px; }
+    .stat-num { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<section class="hero">
+  <canvas id="fiber-canvas"></canvas>
+  <div class="grid-overlay"></div>
+  <nav>
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 36 36" fill="none">
+          <path d="M18 2 C10 8, 8 14, 8 20 C8 28, 14 34, 18 34" stroke="#2DD4D4" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18 2 C26 8, 28 14, 28 20 C28 28, 22 34, 18 34" stroke="#FF6B2C" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="18" cy="18" r="3.5" fill="#FF6B2C"/>
+          <circle cx="18" cy="18" r="6" stroke="#FF6B2C" stroke-width="1" opacity="0.4"/>
+        </svg>
+      </div>
+      BNS<span>Connect</span>
+    </div>
+    <div class="nav-links">
+      <a href="#">Услуги</a>
+      <a href="#">Опыт</a>
+      <a href="#">Процесс</a>
+      <a href="#">Зона работы</a>
+      <a href="#" class="nav-cta">Получить расчёт</a>
+    </div>
+  </nav>
+  <div class="hero-body">
+    <div class="eyebrow">
+      <span class="dot"></span>
+      Licensed Low-Voltage Contractor
+      <span class="lic">· ES12002664</span>
+    </div>
+    <h1>
+      <span class="line"><span>Свет, который</span></span>
+      <span class="line"><span>несёт <span class="glow">данные.</span></span></span>
+      <span class="line"><span>Проложен точно.</span></span>
+    </h1>
+    <p class="sub">
+      <strong>BNS Connect</strong> — оптоволокно, структурированные кабельные системы и слаботочные сети для дата-центров, отелей и коммерческих объектов Южной Флориды. Каждый объект документирован, маркирован и протестирован.
+    </p>
+    <div class="cta-row">
+      <a href="#" class="btn-primary">
+        Запросить выезд инженера
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h11M10 5l4 4-4 4" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#" class="btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#EAF2FB" stroke-width="1.5"/><path d="M6.5 5.5l4 2.5-4 2.5z" fill="#EAF2FB"/></svg>
+        Наши работы
+      </a>
+    </div>
+  </div>
+  <div class="stats-wrap">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" data-target="1500"><span class="plus">+</span></div>
+        <div class="stat-label">Установок выполнено</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-target="10"><span class="plus">+</span></div>
+        <div class="stat-label">Лет в индустрии</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-suffix="%">100</div>
+        <div class="stat-label">Объектов протестировано</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">$2M</div>
+        <div class="stat-label">Страховое покрытие</div>
+      </div>
+    </div>
+  </div>
+  <div class="badges">
+    <span class="badge"><span class="bdot"></span>BICSI Technician #424441</span>
+    <span class="badge"><span class="bdot"></span>FOA CFOT</span>
+    <span class="badge"><span class="bdot"></span>OSHA-10</span>
+    <span class="badge"><span class="bdot"></span>Fiber · OTDR · Fusion Splicing</span>
+    <span class="badge"><span class="bdot"></span>Broward · Miami-Dade · Palm Beach</span>
+  </div>
+  <div class="scroll-hint">
+    <div class="mouse"></div>
+    Листайте вниз
+  </div>
+</section>
+<script>
+  // ===== FIBER OPTIC CANVAS — светящиеся импульсы бегут по нитям =====
+  const canvas = document.getElementById('fiber-canvas');
+  const ctx = canvas.getContext('2d');
+  const hero = document.querySelector('.hero');
+  const gridOverlay = document.querySelector('.grid-overlay');
+  let W, H, fibers = [], pulses = [];
+  let mouse = { x: -9999, y: -9999, active: false };
+  let parallaxX = 0, parallaxY = 0, targetPX = 0, targetPY = 0;
+
+  function resize() {
+    W = canvas.width = window.innerWidth * devicePixelRatio;
+    H = canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    buildFibers();
+  }
+
+  function buildFibers() {
+    fibers = [];
+    // ПЛОТНЕЕ: больше нитей
+    const count = window.innerWidth < 880 ? 16 : 30;
+    for (let i = 0; i < count; i++) {
+      const startY = (H / (count + 1)) * (i + 1) + (Math.random() - 0.5) * 50 * devicePixelRatio;
+      const pts = [];
+      const segs = 7;
+      for (let s = 0; s <= segs; s++) {
+        pts.push({
+          x: (W / segs) * s,
+          y: startY + Math.sin(s * 0.9 + i) * 48 * devicePixelRatio + (Math.random() - 0.5) * 28 * devicePixelRatio
+        });
+      }
+      fibers.push({ pts, hue: Math.random() > 0.5 ? 'orange' : 'cyan', baseAlpha: 0.06 + Math.random() * 0.05, flare: 0 });
+    }
+  }
+
+  function spawnPulse(forceFiber) {
+    if (fibers.length === 0) return;
+    const f = forceFiber || fibers[Math.floor(Math.random() * fibers.length)];
+    pulses.push({
+      fiber: f,
+      t: 0,
+      speed: 0.0028 + Math.random() * 0.0035,
+      color: f.hue === 'orange' ? '255,107,44' : '45,212,212',
+      len: 0.08 + Math.random() * 0.06
+    });
+  }
+
+  // Page-load вспышка: синхронная волна по ВСЕМ нитям
+  function loadWave() {
+    fibers.forEach(f => {
+      pulses.push({
+        fiber: f,
+        t: 0,
+        speed: 0.006,
+        color: f.hue === 'orange' ? '255,107,44' : '45,212,212',
+        len: 0.12,
+        wave: true
+      });
+    });
+  }
+
+  function pointOnFiber(f, t) {
+    const segCount = f.pts.length - 1;
+    const scaled = t * segCount;
+    const i = Math.min(Math.floor(scaled), segCount - 1);
+    const local = scaled - i;
+    const a = f.pts[i], b = f.pts[i + 1];
+    return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
+  }
+
+  function drawFiberPath(f) {
+    ctx.beginPath();
+    ctx.moveTo(f.pts[0].x, f.pts[0].y);
+    for (let i = 1; i < f.pts.length; i++) {
+      const xc = (f.pts[i].x + f.pts[i - 1].x) / 2;
+      const yc = (f.pts[i].y + f.pts[i - 1].y) / 2;
+      ctx.quadraticCurveTo(f.pts[i - 1].x, f.pts[i - 1].y, xc, yc);
+    }
+    ctx.lineTo(f.pts[f.pts.length - 1].x, f.pts[f.pts.length - 1].y);
+  }
+
+  // Расстояние от точки мыши до нити (приближённо по узлам)
+  function fiberMouseDist(f) {
+    if (!mouse.active) return Infinity;
+    let min = Infinity;
+    const mx = mouse.x * devicePixelRatio, my = mouse.y * devicePixelRatio;
+    for (let s = 0; s <= 12; s++) {
+      const p = pointOnFiber(f, s / 12);
+      const dx = p.x - mx, dy = p.y - my;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < min) min = d;
+    }
+    return min;
+  }
+
+  let lastSpawn = 0;
+  function animate(ts) {
+    ctx.clearRect(0, 0, W, H);
+
+    // Parallax: плавно приближаем смещение к цели
+    parallaxX += (targetPX - parallaxX) * 0.06;
+    parallaxY += (targetPY - parallaxY) * 0.06;
+    ctx.save();
+    ctx.translate(parallaxX, parallaxY);
+
+    const hoverThreshold = 70 * devicePixelRatio;
+
+    // базовые нити
+    fibers.forEach(f => {
+      const d = fiberMouseDist(f);
+      // вспышка при наведении рядом
+      let targetFlare = 0;
+      if (d < hoverThreshold) {
+        targetFlare = 1 - (d / hoverThreshold);
+        if (Math.random() < 0.04 * targetFlare) spawnPulse(f);
+      }
+      f.flare += (targetFlare - f.flare) * 0.15;
+
+      drawFiberPath(f);
+      const a = f.baseAlpha + f.flare * 0.5;
+      ctx.strokeStyle = f.hue === 'orange'
+        ? 'rgba(255,107,44,' + a + ')'
+        : 'rgba(45,212,212,' + a + ')';
+      ctx.lineWidth = (1 + f.flare * 1.6) * devicePixelRatio;
+      if (f.flare > 0.05) {
+        ctx.shadowBlur = 14 * f.flare * devicePixelRatio;
+        ctx.shadowColor = f.hue === 'orange' ? 'rgba(255,107,44,0.9)' : 'rgba(45,212,212,0.9)';
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    // импульсы света
+    pulses.forEach(p => {
+      p.t += p.speed;
+      const head = p.t;
+      const tail = p.t - p.len;
+      if (tail > 1) return;
+      const steps = 18;
+      for (let s = 0; s < steps; s++) {
+        const localT = tail + (head - tail) * (s / steps);
+        if (localT < 0 || localT > 1) continue;
+        const pt = pointOnFiber(p.fiber, localT);
+        const fade = s / steps;
+        const r = (1.5 + fade * 2.5) * devicePixelRatio;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(' + p.color + ',' + (fade * 0.9) + ')';
+        ctx.fill();
+      }
+      if (head <= 1 && head >= 0) {
+        const hp = pointOnFiber(p.fiber, head);
+        const grad = ctx.createRadialGradient(hp.x, hp.y, 0, hp.x, hp.y, 14 * devicePixelRatio);
+        grad.addColorStop(0, 'rgba(' + p.color + ',1)');
+        grad.addColorStop(0.4, 'rgba(' + p.color + ',0.5)');
+        grad.addColorStop(1, 'rgba(' + p.color + ',0)');
+        ctx.beginPath();
+        ctx.arc(hp.x, hp.y, 14 * devicePixelRatio, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+    });
+
+    ctx.restore();
+
+    pulses = pulses.filter(p => p.t - p.len <= 1);
+    // БОЛЬШЕ импульсов: чаще спавн + несколько за раз
+    if (ts - lastSpawn > 220) { spawnPulse(); if (Math.random() > 0.5) spawnPulse(); lastSpawn = ts; }
+    requestAnimationFrame(animate);
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Parallax по движению мыши
+  if (!reduceMotion && hero) {
+    hero.addEventListener('mousemove', (e) => {
+      const rect = hero.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      mouse.active = true;
+      const nx = (e.clientX / window.innerWidth) - 0.5;
+      const ny = (e.clientY / window.innerHeight) - 0.5;
+      targetPX = -nx * 30 * devicePixelRatio;
+      targetPY = -ny * 22 * devicePixelRatio;
+      if (gridOverlay) gridOverlay.style.transform = 'translate(' + (-nx * 14) + 'px,' + (-ny * 10) + 'px)';
+    });
+    hero.addEventListener('mouseleave', () => {
+      mouse.active = false; mouse.x = -9999; mouse.y = -9999;
+      targetPX = 0; targetPY = 0;
+      if (gridOverlay) gridOverlay.style.transform = 'translate(0,0)';
+    });
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  if (!reduceMotion) {
+    requestAnimationFrame(animate);
+    // несколько начальных импульсов + page-load волна
+    for (let i = 0; i < 6; i++) spawnPulse();
+    setTimeout(loadWave, 250);
+  } else {
+    // статичная отрисовка
+    fibers.forEach(f => { drawFiberPath(f); ctx.strokeStyle = 'rgba(255,107,44,0.1)'; ctx.lineWidth = devicePixelRatio; ctx.stroke(); });
+  }
+
+  // ===== СЧЁТЧИКИ =====
+  function animateCounter(el) {
+    const target = parseInt(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    let cur = 0;
+    const dur = 1600;
+    const start = performance.now();
+    function tick(now) {
+      const prog = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - prog, 3);
+      cur = Math.floor(target * eased);
+      el.childNodes[0].nodeValue = cur.toLocaleString('ru-RU') + suffix;
+      if (prog < 1) requestAnimationFrame(tick);
+      else el.childNodes[0].nodeValue = target.toLocaleString('ru-RU') + suffix;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  setTimeout(() => {
+    document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+      if (!reduceMotion) animateCounter(el);
+      else el.childNodes[0].nodeValue = parseInt(el.dataset.target).toLocaleString('ru-RU');
+    });
+    document.querySelectorAll('.stat-num[data-suffix]').forEach(el => {
+      if (!el.dataset.target) {
+        const val = parseInt(el.childNodes[0].nodeValue);
+        if (!reduceMotion) {
+          let cur = 0; const start = performance.now();
+          function t2(now){ const pr = Math.min((now-start)/1600,1); const e=1-Math.pow(1-pr,3); el.childNodes[0].nodeValue = Math.floor(val*e)+el.dataset.suffix; if(pr<1)requestAnimationFrame(t2); else el.childNodes[0].nodeValue=val+el.dataset.suffix; }
+          requestAnimationFrame(t2);
+        }
+      }
+    });
+  }, 1100);
+</script>
+</body>
+</html>
